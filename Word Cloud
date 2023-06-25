@@ -1,0 +1,47 @@
+library(tidyverse)
+library(janeaustenr)
+library(DT)
+library(tidytext)
+library(dplyr)
+library(stringr)
+library(sentimentr)
+library(ggplot2)
+library(RColorBrewer)
+library(readr)
+library(SnowballC)
+library(tm)
+library(wordcloud)
+library(reticulate)
+library(crfsuite)
+
+
+dataset <- read.csv(file = "Womens Clothing E-Commerce Reviews.csv", header = TRUE, sep = ",")
+
+## converting data into a text file 
+#textcol <- filter(dataset, Class.Name =="Sweaters")
+textcol <- select(dataset, Reviews)
+textcol <- dataset$Reviews
+
+write.table(textcol, "textcol.txt")
+modi_txt = readLines(file("textcol.txt"))
+doc_ids <- c(1)
+df <- data.frame(doc_id = doc_ids, text = modi_txt, stringsAsFactors = FALSE)
+df_corpus <- Corpus(DataframeSource(df))
+
+modi_data<-tm_map(df_corpus,tolower)
+modi_data<-tm_map(modi_data,removeNumbers)
+modi_data<-tm_map(modi_data,removePunctuation)
+modi_data<-tm_map(modi_data,removeWords, stopwords("english"))
+modi_data<-tm_map(modi_data, removeWords, c("and","for","the","with", "top","size","dress","get","don't"))
+modi_data<- tm_map(modi_data, stripWhitespace)
+
+# Text stemming - which reduces words to their root form
+modi_data <- tm_map(modi_data, stemDocument)
+
+# produce word cloud 
+tdm_modi<-TermDocumentMatrix(modi_data) #Creates a TDM
+set.seed(1234)
+cloud <- wordcloud(words = modi_data, min.freq = 100,
+                   max.words=300, random.order=FALSE, rot.per=0.35,
+                   colors=brewer.pal(5, "Dark2"))
+
